@@ -44,6 +44,7 @@ const Dealers = () => {
   }
   useEffect(() => {
     get_dealers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);  
 
 

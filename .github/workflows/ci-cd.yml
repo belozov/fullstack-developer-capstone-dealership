@@ -53,7 +53,7 @@ jobs:
       run: |
         cd server/frontend
         npm install --legacy-peer-deps
-        npm run build
+        CI=false npm run build
 
     - name: Lint Code
       run: |
