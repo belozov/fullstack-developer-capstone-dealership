@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dealership-app
+  labels:
+    app: dealership
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dealership
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: dealership
+    spec:
+      containers:
+      - name: dealership
+        image: us.icr.io/sn-labs-capstone/dealership:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: backend_url
+          value: "http://database-service:3030"
+        - name: sentiment_analyzer_url
+          value: "http://sentiment-service:5050/"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dealership-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: dealership

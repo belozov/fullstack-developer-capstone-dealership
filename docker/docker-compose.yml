@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  # MongoDB for Dealerships and Reviews
+  mongo_db:
+    container_name: dealership_mongo
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+  # Node.js/Express Dealership and Review Microservice
+  database_api:
+    container_name: dealership_database_api
+    build:
+      context: ../server/database
+      dockerfile: Dockerfile
+    ports:
+      - "3030:3030"
+    environment:
+      - MONGO_URL=mongodb://mongo_db:27017/
+      - PORT=3030
+    depends_on:
+      - mongo_db
+    restart: always
+
+  # Flask Sentiment Analysis Microservice
+  sentiment_analyzer:
+    container_name: dealership_sentiment_analyzer
+    build:
+      context: ../server/djangoapp/microservices
+      dockerfile: Dockerfile
+    ports:
+      - "5050:5050"
+    environment:
+      - PORT=5050
+    restart: always
+
+  # Django Web Application with React Frontend
+  dealership_web:
+    container_name: dealership_web_app
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - backend_url=http://database_api:3030
+      - sentiment_analyzer_url=http://sentiment_analyzer:5050/
+    depends_on:
+      - database_api
+      - sentiment_analyzer
+    restart: always
+
+volumes:
+  mongo_data:

@@ -1,0 +1,68 @@
+name: 'CI/CD Pipeline - Dealership Capstone'
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build_and_test:
+    name: Build, Test, and Verify
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        cd server
+        pip install -r requirements.txt
+        pip install django-cors-headers Flask nltk flake8
+        python -c "import nltk; nltk.download('vader_lexicon')"
+
+    - name: Run Django Migrations
+      run: |
+        cd server
+        python manage.py makemigrations
+        python manage.py migrate
+
+    - name: Run Backend Tests
+      run: |
+        cd server
+        python manage.py test djangoapp
+
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Database Service Dependencies
+      run: |
+        cd server/database
+        npm install
+
+    - name: Install Frontend Dependencies & Build React App
+      run: |
+        cd server/frontend
+        npm install --legacy-peer-deps
+        npm run build
+
+    - name: Lint Code
+      run: |
+        cd server
+        flake8 djangoapp/models.py djangoapp/views.py djangoapp/urls.py --count --max-line-length=127 --statistics
+
+    - name: Build Verification Summary
+      run: |
+        echo "=========================================="
+        echo "CI/CD Pipeline Completed Successfully!"
+        echo "Backend tests passed, React frontend built."
+        echo "=========================================="
